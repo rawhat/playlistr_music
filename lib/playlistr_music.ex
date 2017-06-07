@@ -63,7 +63,7 @@ defmodule PlaylistrMusic do
                 {:ok, %{
                     "title" => info["fulltitle"],
                     "url" => url,
-                    "length" => info["duration"] |> Integer.to_string |> convertTime,
+                    "length" => info["duration"],
                     "streamUrl" => info["formats"] |> get_best_quality(true)
                 }}
 
@@ -80,7 +80,7 @@ defmodule PlaylistrMusic do
                 {:ok, %{
                     "title" => info["fulltitle"],
                     "url" => url,
-                    "length" => info["duration"] |> Integer.to_string |> convertTime,
+                    "length" => info["duration"],
                     "streamUrl" => info["formats"] |> get_best_quality(false)
                 }}
             _ ->
@@ -230,6 +230,41 @@ defmodule PlaylistrMusic do
             {:ok, _} ->
                 {:reply, :ok, state}
                 
+            {:err, _} ->
+                {:reply, :err, state}
+        end
+    end
+
+    def handle_call({:get_current_song_and_playtime, title}, _from, state) do
+        case Bolt.Sips.query(
+            state.conn,
+            """
+                MATCH (p:Playlist)-[:HAS]-(s:Song)
+                WHERE p.title = '#{title}'
+                RETURN p AS playlist, s AS songs
+            """
+        ) do
+            {:ok, results} ->
+                playlist = (hd results)["playlist"].properties
+                
+                startDate = playlist |> Map.get("startDate", get_current_epoch_time())
+                time = playlist |> Map.get("currentTime", 0)
+                currentTime = time + (get_current_epoch_time() - startDate) / 1000
+
+                songs = results |> Enum.map (&(&1["songs"].properties))
+
+                response = songs
+                    |> Enum.reduce_while(%{ :song => nil, :time => -1, :length => 0 }, fn song, res ->
+                        {songLength, _} = Integer.parse(song["length"])
+
+                        if (res.length + songLength) > currentTime do
+                            { :halt, %{ :song => song, :time => currentTime - res.length } }
+                        else
+                            { :cont, %{ :song => nil, :time => -1, :length => res.length + song["length"] } }
+                        end
+                    end)
+
+                {:reply, response, state}
             {:err, _} ->
                 {:reply, :err, state}
         end
