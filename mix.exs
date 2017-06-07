@@ -17,8 +17,13 @@ defmodule PlaylistrMusic.Mixfile do
     # Specify extra applications you'll use from Erlang/Elixir
     [ 
       # applications: [:neo4j_sips], mod: {Neo4j.Sips.Application, []},
-      applications: [:bolt_sips], mod: {Bolt.Sips.Application, []}
-      # extra_applications: [:logger]
+      applications: [:bolt_sips], 
+      extra_applications: [:logger], mod: {Bolt.Sips.Application, [
+          url: "localhost:7687",
+          basic_auth: [username: "neo4j", password: "Password12"]
+        ]}
+      # extra_applications: [:logger], mod:
+      #   {Bolt.Sips.Application, [url: 'localhost', pool_size: 15]}
     ]
   end
 
@@ -32,7 +37,8 @@ defmodule PlaylistrMusic.Mixfile do
   #
   # Type "mix help deps" for more examples and options
   defp deps do
-    [{:bolt_sips, "~> 0.3"}
+    [{:bolt_sips, "~> 0.3"},
+     {:poison, "~> 3.1.0"}
     #  {:neo4j_sips, "~> 0.2"}
     ]
   end

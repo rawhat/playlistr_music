@@ -29,9 +29,10 @@ use Mix.Config
 #
 #     import_config "#{Mix.env}.exs"
 
-config :bolt_sips, Bolt,
-    hostname: "localhost",
-    basic_auth: [username: "neo4j", password: "Password12"]
+# config :bolt_sips, Bolt,
+#     url: "localhost:7687",
+#     basic_auth: [username: "neo4j", password: "Password12"]
+    # ssl: true
 
 # config :neo4j_sips, Neo4j,
 #     basic_auth: [username: "neo4j", password: "neo4j"]
